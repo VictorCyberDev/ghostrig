@@ -1,0 +1,16 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {GuestSession,sign,encode} from '../packages/bridge-protocol/index.js';
+const key='example-test-secret-32-bytes-000000000000';const hash='a'.repeat(64);const runId='private-run-1';
+const mk=()=>new GuestSession({key,runId,scenarioHash:hash,controllerHash:hash,timeoutMs:200});
+const hello={protocol_version:1,run_id:runId,seq:0,kind:'HELLO',scenario_sha256:hash,controller_sha256:hash,qnx_build:'8.0-UNVERIFIED-TEST-STRING',capabilities:[]};
+const send=(s,f,t=0)=>s.receive(f,sign(key,f),t);
+test('valid authenticated handshake accepted as protocol only',()=>assert.equal(send(mk(),hello).state,'ACTIVE'));
+test('invalid HMAC aborts session',()=>{const s=mk();assert.throws(()=>s.receive(hello,'00'.repeat(32),0));assert.equal(s.state,'ABORTED');});
+test('HELLO identity mismatch aborts',()=>assert.throws(()=>send(mk(),{...hello,scenario_sha256:'b'.repeat(64)})));
+test('duplicate sequence aborts',()=>{const s=mk();send(s,hello);assert.throws(()=>send(s,hello,1));});
+test('missing sequence aborts',()=>{const s=mk();send(s,hello);assert.throws(()=>send(s,{protocol_version:1,run_id:runId,seq:2,sim_tick:1,kind:'HEARTBEAT'},1));});
+test('motor command bounds enforced',()=>{const s=mk();send(s,hello);assert.throws(()=>send(s,{protocol_version:1,run_id:runId,seq:1,sim_tick:1,kind:'MOTOR_COMMAND',speed_mps:40},1));});
+test('heartbeat timeout aborts, no PASS',()=>{const s=mk();send(s,hello);assert.throws(()=>s.checkTimeout(201));assert.equal(s.state,'ABORTED');});
+test('guest cannot assert PASS',()=>{const s=mk();send(s,hello);assert.throws(()=>send(s,{protocol_version:1,run_id:runId,seq:1,sim_tick:1,kind:'END',outcome:'PASS'},1));});
+test('frame max 64KiB enforced',()=>assert.throws(()=>encode({x:'x'.repeat(70_000)})));
+test('valid motor command followed by END',()=>{const s=mk();send(s,hello);send(s,{protocol_version:1,run_id:runId,seq:1,sim_tick:1,kind:'MOTOR_COMMAND',speed_mps:0.3},2);assert.equal(send(s,{protocol_version:1,run_id:runId,seq:2,sim_tick:2,kind:'END',outcome:'ENDED'},3).state,'COMPLETE');});
