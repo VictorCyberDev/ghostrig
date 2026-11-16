@@ -20,7 +20,7 @@ function Warehouse(){
  {[[-5,-3.6],[-5,3.6],[10,-3.6],[10,3.6]].map(([x,z],i)=><mesh key={i} position={[x,.43,z]} castShadow><cylinderGeometry args={[.16,.19,.86,16]}/><meshStandardMaterial color="#e2ac52" metalness={.35} roughness={.45}/></mesh>)}
  <mesh position={[2.5,.85,0]} castShadow><boxGeometry args={[.46,1.7,.92]}/><meshStandardMaterial color="#c18b57" roughness={.84}/></mesh>
  <mesh position={[2.5,1.73,0]}><boxGeometry args={[.5,.09,.96]}/><meshStandardMaterial color="#56595a" metalness={.7}/></mesh>
- <gridHelper args={[30,30,'#aaa99f','#c1bfb4']} position={[0,.007,0]}/>
+ 
  </group>
 }
 function Robot({frame,selected,onSelect}){
@@ -38,11 +38,11 @@ function Robot({frame,selected,onSelect}){
 }
 function CameraPreset({preset}){
  const {camera}=useThree();
- useEffect(()=>{const coords=preset==='top'?[2,18,.01]:preset==='follow'?[-3,3,4]:[7,6,10];camera.position.set(...coords);camera.lookAt(1,.4,0);camera.updateProjectionMatrix()},[preset,camera]);
+ useEffect(()=>{const coords=preset==='top'?[2,18,.01]:preset==='follow'?[-3,3,3.5]:[6,7,3.2];camera.position.set(...coords);camera.lookAt(1,.4,0);camera.updateProjectionMatrix()},[preset,camera]);
  return null;
 }
 function LabScene({frame,selected,setSelected,preset}){
- return <Canvas shadows dpr={[1,1.75]} camera={{position:[7,6,10],fov:45,near:.1,far:150}} onPointerMissed={()=>setSelected(null)}>
+ return <Canvas shadows dpr={[1,1.75]} camera={{position:[6,7,3.2],fov:48,near:.1,far:150}} onPointerMissed={()=>setSelected(null)}>
  <color attach="background" args={['#e5e7e3']}/><fog attach="fog" args={['#e5e7e3',18,70]}/>
  <ambientLight intensity={1.6}/><hemisphereLight intensity={1.25} color="#f7f4e8" groundColor="#89877d"/>
  <directionalLight position={[6,13,5]} castShadow intensity={3.0} shadow-mapSize={[2048,2048]} shadow-camera-left={-18} shadow-camera-right={18} shadow-camera-top={18} shadow-camera-bottom={-18}/>
