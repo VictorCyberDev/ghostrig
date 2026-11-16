@@ -1,0 +1,32 @@
+name: Warehouse browser E2E
+on:
+  push:
+    paths:
+      - "apps/web/**"
+      - "packages/world-engine/**"
+      - "packages/contracts/**"
+      - ".github/workflows/warehouse-browser.yml"
+  pull_request:
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-audit --no-fund
+        working-directory: apps/web
+      - run: npx playwright install --with-deps chromium
+        working-directory: apps/web
+      - run: npm run test:e2e
+        working-directory: apps/web
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: warehouse-browser-evidence
+          path: |
+            apps/web/test-results/
+            apps/web/playwright-report/
+          retention-days: 14
