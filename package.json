@@ -1,0 +1,6 @@
+{
+  "name":"ghostr-r0","version":"0.1.0","private":true,"type":"module",
+  "description":"GhostRig 2.0 host-only deterministic world and evidence proof",
+  "scripts":{"test":"node --test tests/*.test.js","demo":"node apps/api/demo.js"},
+  "engines":{"node":">=22"},"license":"MIT"
+}
