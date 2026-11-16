@@ -1,0 +1,13 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {validateScenario,verifyEventStream} from '../packages/contracts/index.js';
+import {runHostPreview} from '../packages/world-engine/index.js';
+const s={schema_version:1,id:'AGV-01',world:'WAREHOUSE_BAY_01',seed:42,mode:'LOCKSTEP_WORLD',physics_version:'warehouse-planar-v1',simulation_dt_ms:50,duration_sim_ms:6000,faults:[{kind:'RANGE_FREEZE',start_tick:15}],assertions:[{kind:'NO_COLLISION'}]};
+test('valid scenario accepted',()=>assert.equal(validateScenario(s).id,'AGV-01'));
+test('bad scenario rejects',()=>assert.throws(()=>validateScenario({...s,simulation_dt_ms:-1})));
+test('bad assertion rejects',()=>assert.throws(()=>validateScenario({...s,assertions:[{kind:'FAKE_PASS'}]})));
+test('duplicate faults reject',()=>assert.throws(()=>validateScenario({...s,faults:[s.faults[0],s.faults[0]]})));
+test('behavioral regression illustrates collision and guarded stop',()=>{const bad=runHostPreview(s,{controller:'vulnerable'}),good=runHostPreview(s,{controller:'guarded'});assert.equal(bad.manifest.verdict,'FAIL');assert.equal(good.manifest.verdict,'PASS');assert.equal(bad.manifest.execution_class,'HOST_MODEL_TEST');assert.equal(good.manifest.qnx_target,null);assert.ok(bad.frames.at(-1).collisions.length>0);assert.deepEqual(good.frames.at(-1).collisions,[]);});
+test('fixed seed yields byte-identical records',()=>assert.deepEqual(runHostPreview(s),runHostPreview(s)));
+test('dropped event is rejected',()=>{const e=runHostPreview(s).events;e.splice(1,1);assert.throws(()=>verifyEventStream(e));});
+test('replayed event is rejected',()=>{const e=runHostPreview(s).events;e.splice(1,0,e[0]);assert.throws(()=>verifyEventStream(e));});
+test('wallclock mode cannot be faked via preview',()=>assert.throws(()=>runHostPreview({...s,mode:'WALLCLOCK_QNX'})));
